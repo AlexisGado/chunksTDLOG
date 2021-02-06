@@ -8,17 +8,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
+# read the clean data
 with open('data/chunks-cleaned.json', encoding="utf8") as json_data:
     chunks_dic = json.load(json_data)
 with open('data/data-anonymized-cleaned.json', encoding="utf8") as json_data:
     messages = json.load(json_data)
 
+# select all the chunks
 chunks = []
 for chunk in chunks_dic["chunks"]:
     for offset in chunk["selectionOffset"]:
         chunks.append(
             {"content": offset["content"], "length": offset["length"], "start": offset["offset_start"]})
 
+# create non-chunks
 all_candidates = []
 esp = " "
 for message in messages:
@@ -38,17 +41,12 @@ X = chunks + all_candidates
 Y = np.concatenate(([1]*len(chunks), [0]*len(all_candidates)))
 X_train, X_test, Y_train, Y_test = train_test_split(
     X, Y, test_size=0.3, random_state=42)
+
 vec = DictVectorizer()
 Xtrain = vec.fit_transform(X_train)
 Xtest = vec.transform(X_test)
-# vectorizer = TfidfVectorizer()
-
-# Xtrain = vectorizer.fit_transform(X_train)
 
 
-# print("voici un fit vectorize : ", Xtrain)
-# Xtest = vectorizer.transform(X_test)
-# print("voici un vectorize : ", Xtest)
 # GRADIENT BOOSTING CLASSIFIER
 gbc = GradientBoostingClassifier(learning_rate=0.01, n_estimators=250, max_depth=50, min_samples_leaf=3,
                                  min_samples_split=100, subsample=0.9, random_state=42)
@@ -60,15 +58,15 @@ Y_pred = gbc.predict(Xtest)
 
 print('accuracy %s' % accuracy_score(Y_pred, Y_test))
 
+# test to study the model
+
 # for i in range(len(Y_pred)):
 #     if Y_pred[i] == 1 and Y_test[i] == 1:
-#         print("c un chunk : ", X_test[i])
+#         print("this is chunk and the model recognize it : ", X_test[i])
 #     if Y_test[i] == 1 and Y_pred[i] == 0:
-#         print("tu a pas vu que c t un chunk : ", X_test[i])
+#         print("the model does not recognize the chunk : ", X_test[i])
 #     if Y_pred[i] == 1 and Y_test[i] == 0:
-#         print(" c t pas un chunk pourtant : ", X_test[i])
-# print(sum(Y_pred))
-# print(sum(Y_test))
+#         print(" this was not a chunk but the model thinks that : ", X_test[i])
 
 message = messages[0]
 
@@ -85,17 +83,11 @@ def test(message):
             debut = esp.join(content_split[0:i])
             all_candidates2.append({"content": candidate, "length": len(
                 candidate), "start": len(debut)})
-    # print(all_candidates2)
-
-    # Xtest2 = vectorizer.transform(all_candidates2)
     all_candidates2 = np.array(all_candidates2)
     Xtest2 = vec.transform(all_candidates2)
     Y_pred2 = gbc.predict(Xtest2)
 
+    # displays all the chunks
     # for i in range(len(Y_pred2)):
     #     if Y_pred2[i]:
     #         print(all_candidates2[i])
-
-
-for i in range(26, 27):
-    test(messages[i])
